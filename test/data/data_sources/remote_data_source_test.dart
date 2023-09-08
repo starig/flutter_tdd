@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/mockito.dart';
 import 'package:tdd_flutter/core/constants/constants.dart';
+import 'package:tdd_flutter/core/error/exception.dart';
 import 'package:tdd_flutter/data/data_sources/remote_data_source.dart';
 import 'package:tdd_flutter/data/models/weather_model.dart';
 
@@ -28,10 +29,27 @@ void main() {
           .thenAnswer((_) async => http.Response(
               readJson('helpers/dummy_data/dummy_weather_response.json'), 200));
       //act
-      final result = await weatherRemoteDataSourceImpl.getCurrentWeather(testCityName);
+      final result =
+          await weatherRemoteDataSourceImpl.getCurrentWeather(testCityName);
 
       //assert
       expect(result, isA<WeatherModel>());
+    });
+
+    test(
+        'should throw a server exception when the response code is 404 or other',
+        () async {
+      //arrange
+      when(
+        mockHttpClient.get(Uri.parse(Urls.currentWeatherByName(testCityName))),
+      ).thenAnswer(
+              (_) async => http.Response('Not found', 404)
+      );
+      //act
+      final result = weatherRemoteDataSourceImpl.getCurrentWeather(testCityName);
+
+      //assert
+      expect(result, throwsA(isA<ServerException>()));
     });
   });
 }
